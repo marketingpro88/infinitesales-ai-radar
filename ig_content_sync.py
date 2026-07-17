@@ -51,8 +51,8 @@ POLL_INTERVAL = 30      # seconds between status polls
 POLL_TIMEOUT = 900      # 15 minutes max wait per actor run
 BATCH_SIZE = 10         # Airtable max records per request
 BATCH_DELAY = 0.25      # seconds between Airtable batches (rate limit)
-MIN_ER = 0.03           # 3% engagement rate threshold
-MIN_COMMENTS = 50       # minimum comments threshold
+MIN_ER = 0.01           # 1% engagement rate threshold
+MIN_COMMENTS = 15       # minimum comments threshold
 MAX_RECORDS = 900       # cleanup threshold (Airtable Free plan = 1000 max)
 PROTECTED_STATUSES = ("拍摄中", "已处理")  # never auto-delete work in progress or done
 
@@ -315,10 +315,14 @@ def scrape_profiles(token):
 
 def scrape_posts(token):
     """Scrape recent IG posts and return raw items."""
+    # Pinned posts ignore onlyPostsNewerThan, and an account pins its all-time
+    # best — so leaving them in fills the table with the same old greatest hits
+    # every week while genuinely recent posts get filtered out.
     actor_input = {
         "username": IG_USERNAMES,
         "resultsLimit": 50,
         "onlyPostsNewerThan": "30 days",
+        "skipPinnedPosts": True,
     }
     items = _run_apify_actor(
         token,
